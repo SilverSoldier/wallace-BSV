@@ -6,7 +6,7 @@ module mkTbCLA ();
 
   rule startTest(start == False);
   	Bit#(8) a = 8'b00001111;
-  	Bit#(8) b = 8'b00000001;
+  	Bit#(8) b = 8'b11110001;
   	cla.add(a, b);
   	start <= True;
   endrule

@@ -16,16 +16,18 @@ module mkCLAn(CLAn);
 
   rule recursive_doubling(offset < `n);
   	for(Int#(32) i = 0; i < `n; i = i+1) begin
-  	  if(i > offset) begin
-  	  	$write("x%dx", i);
-  		cs0[i] <= cs0[i] | (cs0[i - offset] & cs1[i]);
-  	  	cs1[i] <= cs0[i] | (cs1[i - offset] & cs1[i]);
+  	  if(i >= offset) begin
+  	  	let temp1 = cs0[i] | (cs0[i - offset] & cs1[i]);
+  	  	let temp2 = cs0[i] | (cs1[i - offset] & cs1[i]);
+  		cs0[i] <= temp1;
+  	  	cs1[i] <= temp2;
+  	  	$write("%d: %b%b + %b%b => %b%b ", i, cs0[i], cs1[i], cs0[i-offset], cs1[i-offset], temp1, temp2);
   	  end
   	end
   	offset <= offset * 2;
-  	for(Int#(32) i = 0; i < `n; i = i+1) begin
-  	  $write("%b%b ", cs0[i], cs1[i]);
-  	end
+  	/* for(Int#(32) i = 0; i < `n; i = i+1) begin */
+  	/*   $write("%b%b ", cs0[i], cs1[i]); */
+  	/* end */
   $display(" ");
   endrule
 
