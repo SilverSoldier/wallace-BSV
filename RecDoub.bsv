@@ -1,10 +1,11 @@
+import Vector::*;
 interface RecDoub;
   method Action prefixSum(Bit#(8) a);
   method Bit#(1) getSum();
 endinterface
 
 module mkRD (RecDoub);
-  Reg#(Bit#(1)) x[8];
+  Vector#(8, Reg#(Bit#(1))) x <- replicateM(mkReg(0));
   Reg#(int) offset <- mkReg(8);
 
   rule recursive_doubling(offset < 8);
@@ -22,7 +23,6 @@ module mkRD (RecDoub);
   	for(Int#(32) i = 0; i < 8; i = i+1) begin
   	  x[i] <= a[i];
   	end
-  	x[0] <= 1;
   	offset <= 1;
   	$display("1");
   endmethod
