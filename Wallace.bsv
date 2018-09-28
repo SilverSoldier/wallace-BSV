@@ -3,6 +3,8 @@ import Vector::*;
 import CRA::*;
 `define n 8
 
+`define ppn 10
+
 `define res 15
 
 module mkCRA(CRA#(n));
@@ -17,13 +19,17 @@ endmodule
 
 module mkWallaceN();
   // n-partial products - each a 2n-1 bit no.
-  Vector#(`n, Reg#(Bit#(`res))) partial_products <- replicateM(mkReg(0));
+  Vector#(`ppn, Reg#(Bit#(`res))) partial_products <- replicateM(mkReg(0));
   Bit#(`n) a = 8'b00001111;
   Bit#(`n) b = 8'b00000001;
+  Bit#(`n) b = 8'b00001001;
   Reg#(Bool) start <- mkReg(True);
   CRA#(`res) cra <- mkCRA();
+  Reg#(Int#(32)) size <- mkReg(`n);
+  CLAn cla <- mkCLAn();
 
   rule init(start == True);
+  	cra.sum(extend(a), extend(b), extend(c));
   	for(Int#(32) i = 0; i < `n; i = i+1) begin
   	  if(b[i] == 1)
   	  	partial_products[i] <= extend(a);
@@ -31,22 +37,33 @@ module mkWallaceN();
   	start <= False;
   endrule
 
-  rule add_partial_products(start == False);
-  	for(Integer i = 0; i < `n; i = i+3) begin
-  	  if(i < `n - 2) begin
-  	  	let temp1 = cra.sum(partial_products[i], partial_products[i+1], partial_products[i+2]);
-  	  	let temp2 = cra.carry(partial_products[i], partial_products[i+1], partial_products[i+2]);
+  rule add_partial_products(start == False && size > 2);
+  	for(Int#(32) i = 0; i < `n; i = i+3) begin
+  	  Int#(32) loc = i/3 * 2;
+  	  /* $display("loc: %d ", loc); */
+  	  if(i < size - 2) begin
+  	  	let sum = cra.sum(partial_products[i], partial_products[i+1], partial_products[i+2]);
+  	  	let carry = cra.carry(partial_products[i], partial_products[i+1], partial_products[i+2]);
 
-  	  	Integer loc = 2 * div(i, 3);
-
-  	  	partial_products[loc] <= temp1;
-  	  	partial_products[loc+1] <= temp2;
+  	  	partial_products[loc] <= sum;
+  	  	partial_products[loc+1] <= carry;
   	  end
   	  else begin
-  	  	Integer loc = div(i, 3) * 2 + mod(i, 3);
   	  	partial_products[loc] <= partial_products[i];
+  	  	if(i < size - 1)
+  	  	  partial_products[loc+1] <= partial_products[i+1];
   	  end
   	end
+  	size <= size/3 * 2 + size%3;
+  	$display("size: %d", size);
+  endrule
+
+  rule finish(size == 2);
+  	// Apply CLA on the remaining 2 nos.
+  	cla.add(partial_products[0], partial_products[1]);
+  	let prod = cla.getSum();
+  	$display("%b", prod);
+  	$finish(0);
   endrule
 
 endmodule
